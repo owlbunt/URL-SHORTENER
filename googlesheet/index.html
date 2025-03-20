@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HLink</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Menu (navbar.html) -->
+    <div id="navbar-container"></div>
+    <script>
+        function loadNavbar() {
+            fetch('/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('navbar-container').innerHTML = data;
+                })
+                .catch(error => console.error('Error loading navbar:', error));
+        }
+        loadNavbar();
+    </script>
+
+    <div class="container mt-5" style="margin-top: 100px!important;">
+        <h1 class="text-center">Integration with Google Sheet</h1>
+        <hr>
+        <h2>1. Introduction</h2>
+        <p>
+            This script allows users to shorten URLs directly from Google Sheets using the API 
+            of <code>s.harishhonda.com</code>. It fetches short URLs for long URLs stored in 
+            the sheet and updates the respective columns automatically.
+        </p>
+
+        <h2>2. Features</h2>
+        <ul>
+            <li>Automatically shortens URLs present in specific columns.</li>
+            <li>Supports multiple column pairs (long URL → short URL).</li>
+            <li>Uses Google Apps Script to fetch and store short URLs.</li>
+            <li>Handles errors and logs issues if API requests fail.</li>
+        </ul>
+
+        <h2>3. How to Use</h2>
+        <p>Follow these steps to integrate the API with Google Sheets:</p>
+        <ol>
+            <li>Open your Google Sheet.</li>
+            <li>Click on <strong>Extensions > Apps Script</strong>.</li>
+            <li>Copy and paste the provided script.</li>
+            <li>Modify the column pairs as per your requirement.</li>
+            <li>Run the script to generate short URLs.</li>
+        </ol>
+
+        <h2>4. Script Code</h2>
+        <pre class="bg-light p-3">
+// Short URL
+function shortenURLsDynamic() {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("input"); // Change if needed
+
+    // Define column pairs: [Long URL Column, Short URL Column]
+    var columnPairs = [
+        ["AN", "AO"],
+        ["AT", "AU"],
+        ["AZ", "BA"]
+    ];
+
+    columnPairs.forEach(pair => {
+        var longCol = columnLetterToIndex(pair[0]); // Convert column letter to index
+        var shortCol = columnLetterToIndex(pair[1]); // Convert column letter to index
+
+        var shortUrls = sheet.getRange(2, shortCol, sheet.getLastRow() - 1).getValues(); // Get short URL column values
+        var longUrls = sheet.getRange(2, longCol, sheet.getLastRow() - 1).getValues(); // Get long URL column values
+
+        var updatedShortUrls = [];
+
+        // Process rows individually to avoid skipping
+        for (var i = 0; i < shortUrls.length; i++) {
+            if (!shortUrls[i][0] && longUrls[i][0]) { // If short URL is empty & long URL exists
+                var shortUrl = getShortUrl(longUrls[i][0]);
+                if (shortUrl) {
+                    sheet.getRange(i + 2, shortCol).setValue(shortUrl); // Update cell directly
+                }
+            }
+        }
+    });
+}
+
+//Supports multi-letter columns (AN, AT, AZ, etc.)
+function columnLetterToIndex(column) {
+    let columnIndex = 0;
+    for (let i = 0; i < column.length; i++) {
+        columnIndex = columnIndex * 26 + (column.charCodeAt(i) - "A".charCodeAt(0) + 1);
+    }
+    return columnIndex;
+}
+
+// Function to call the API and get only the short URL
+function getShortUrl(longUrl) {
+    var apiUrl = "https://s.harishhonda.com/api/" + encodeURIComponent(longUrl); // Construct API URL
+
+    try {
+        var response = UrlFetchApp.fetch(apiUrl, { method: "get" }); // Send GET request
+        var json = JSON.parse(response.getContentText()); // Parse JSON response
+        return json.short_url || ""; // Return only the short_url field
+    } catch (e) {
+        Logger.log("Error fetching URL: " + e.toString()); // Log errors
+        return "";
+    }
+}
+        </pre>
+
+        <h2>5. Multi-Column Support</h2>
+        <p>
+            The script supports shortening URLs from **multiple columns** simultaneously.
+            You can define multiple column pairs in the <code>columnPairs</code> array.
+            Each pair represents a mapping of:
+        </p>
+        <ul>
+            <li>One column where long URLs are stored.</li>
+            <li>One column where the corresponding short URLs will be placed.</li>
+        </ul>
+
+        <h3>Example of Multiple Column Pairs:</h3>
+        <pre class="bg-light p-3">
+var columnPairs = [
+    ["A", "B"],  // Long URL in Column A → Short URL in Column B
+    ["D", "E"],  // Long URL in Column D → Short URL in Column E
+];
+        </pre>
+
+        <p>
+            Modify this array to include the columns you need. The script will iterate through 
+            each row in each pair and generate short URLs accordingly.
+        </p>
+
+        <h2>6. Error Handling</h2>
+        <p>
+            If there is an error while fetching the short URL, the script logs the error in the 
+            Google Apps Script Logger.
+        </p>
+
+        <h2>7. Conclusion</h2>
+        <p>
+            This script makes it easy to integrate Google Sheets with 
+            <code>s.harishhonda.com</code>'s URL shortener API, allowing you to shorten URLs 
+            automatically within your spreadsheet.
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-container"></div>
+    <script>
+        function loadFooter() {
+            fetch('/footer.html')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('footer-container').innerHTML = data;
+                })
+                .catch(error => console.error('Error loading navbar:', error));
+        }
+        loadFooter();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
